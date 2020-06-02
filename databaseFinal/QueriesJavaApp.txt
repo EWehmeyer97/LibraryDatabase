@@ -1,0 +1,33 @@
+-- Query 1: Returns all Contents of Actor table
+SELECT *
+FROM Actor;
+
+-- Query 2: Returns Titles of all AudioBooks written by B B
+SELECT Title
+FROM Inventory
+WHERE Inventory.Inv_ID IN
+	(SELECT AUD_ID
+	 FROM Audiobook, Written_By, Author
+	 WHERE Author.Fname = 'B'
+	 AND Author.Lname = 'B'
+	 AND Written_By.Auth_ID = Author.ID
+	 AND Written_By.Audio_ID = Audiobook.AUD_ID);
+
+
+-- Query 3: Returns Titles of all Movies directed by N P
+SELECT Title
+FROM Inventory
+WHERE Inventory.Inv_ID IN 
+	(SELECT MOV_ID
+	 FROM Director, Directed_By, Movie
+	 WHERE Director.Fname = 'N'
+	 AND Director.Lname = 'P'
+	 AND Movie.MOV_ID = Directed_By.Movie_ID
+	 AND Directed_By.Direct_ID = Director.ID);
+
+-- Query 4: Returns total price of all fees Patron D E has accumulated
+SELECT SUM(Fee.Amount)
+FROM Patron, Fee
+WHERE Patron.Fname = 'D'
+AND Patron.Lname = 'E'
+AND Fee.HolderNo = Patron.CardNo;

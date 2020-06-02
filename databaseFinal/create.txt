@@ -1,0 +1,302 @@
+--
+-- File generated with SQLiteStudio v3.2.1 on Thu Apr 23 01:37:16 2020
+--
+-- Text encoding used: System
+--
+PRAGMA foreign_keys = off;
+BEGIN TRANSACTION;
+
+-- Table: Actor
+CREATE TABLE Actor (
+    ID    INTEGER      PRIMARY KEY
+                       NOT NULL,
+    Fname VARCHAR (20) NOT NULL,
+    Lname VARCHAR (30) NOT NULL,
+    UNIQUE (
+        ID
+    )
+);
+
+
+-- Table: Actor_Starring
+CREATE TABLE Actor_Starring (
+    Movie_ID INTEGER REFERENCES Movie (MOV_ID) 
+                     NOT NULL,
+    Actor_ID INTEGER REFERENCES Actor (ID) 
+                     NOT NULL,
+    Role     VARCHAR,
+    PRIMARY KEY (
+        Movie_ID,
+        Actor_ID
+    ),
+    UNIQUE (
+        Movie_ID,
+        Actor_ID
+    )
+);
+
+
+-- Table: Album
+CREATE TABLE Album (
+    ALB_ID   INTEGER PRIMARY KEY
+                     REFERENCES Inventory (Inv_ID) 
+                     UNIQUE
+                     NOT NULL,
+    TrackNum INTEGER
+);
+
+
+-- Table: Album_Creation
+CREATE TABLE Album_Creation (
+    Artist_ID INTEGER REFERENCES Artist (ID) 
+                      NOT NULL,
+    Album_ID  INTEGER REFERENCES Album (ALB_ID) 
+                      NOT NULL,
+    PRIMARY KEY (
+        Artist_ID,
+        Album_ID
+    ),
+    UNIQUE (
+        Artist_ID,
+        Album_ID
+    )
+);
+
+
+-- Table: Artist
+CREATE TABLE Artist (
+    ID    INTEGER      PRIMARY KEY
+                       NOT NULL,
+    Fname VARCHAR (20) NOT NULL,
+    Lname VARCHAR (30) NOT NULL,
+    UNIQUE (
+        ID
+    )
+);
+
+
+-- Table: Audiobook
+CREATE TABLE Audiobook (
+    AUD_ID   INTEGER PRIMARY KEY
+                     REFERENCES Inventory (Inv_ID) 
+                     UNIQUE
+                     NOT NULL,
+    Chapters INTEGER
+);
+
+
+-- Table: Author
+CREATE TABLE Author (
+    ID    INTEGER      PRIMARY KEY
+                       NOT NULL,
+    Fname VARCHAR (20) NOT NULL,
+    Lname VARCHAR (30) NOT NULL,
+    UNIQUE (
+        ID
+    )
+);
+
+
+-- Table: Directed_By
+CREATE TABLE Directed_By (
+    Direct_ID INTEGER REFERENCES Director (ID) 
+                      NOT NULL,
+    Movie_ID  INTEGER REFERENCES Movie (MOV_ID) 
+                      NOT NULL,
+    PRIMARY KEY (
+        Direct_ID,
+        Movie_ID
+    ),
+    UNIQUE (
+        Direct_ID,
+        Movie_ID
+    )
+);
+
+
+-- Table: Director
+CREATE TABLE Director (
+    ID    INTEGER      PRIMARY KEY
+                       NOT NULL,
+    Fname VARCHAR (20) NOT NULL,
+    Lname VARCHAR (30) NOT NULL,
+    UNIQUE (
+        ID
+    )
+);
+
+
+-- Table: Electronic_Copy
+CREATE TABLE Electronic_Copy (
+    Item_ID  INTEGER REFERENCES Inventory (Inv_ID) 
+                     NOT NULL,
+    License  INTEGER NOT NULL
+                     UNIQUE,
+    Reserved INTEGER REFERENCES Patron (CardNo),
+    Out_Date DATE,
+    Due_Date DATE,
+    PRIMARY KEY (
+        License
+    )
+);
+
+
+-- Table: Fee
+CREATE TABLE Fee (
+    HolderNo INTEGER REFERENCES Patron (CardNo) 
+                     NOT NULL,
+    FeeNo    INTEGER NOT NULL,
+    Amount   DECIMAL NOT NULL,
+    Date     DATE    NOT NULL,
+    PRIMARY KEY (
+        HolderNo,
+        FeeNo
+    )
+);
+
+
+-- Table: Genres
+CREATE TABLE Genres (
+    Piece_ID INTEGER REFERENCES Inventory (Inv_ID) 
+                     NOT NULL,
+    Genre    VARCHAR NOT NULL,
+    PRIMARY KEY (
+        Piece_ID,
+        Genre
+    )
+);
+
+
+-- Table: Inventory
+CREATE TABLE Inventory (
+    Inv_ID INTEGER      PRIMARY KEY
+                        UNIQUE
+                        NOT NULL,
+    Title  VARCHAR (40) NOT NULL,
+    Year   INTEGER,
+    Length INT
+);
+
+
+-- Table: Movie
+CREATE TABLE Movie (
+    MOV_ID INTEGER     PRIMARY KEY
+                       REFERENCES Inventory (Inv_ID) 
+                       NOT NULL
+                       UNIQUE,
+    Rating VARCHAR (4) 
+);
+
+
+-- Table: Narrated_By
+CREATE TABLE Narrated_By (
+    Audio_ID INTEGER REFERENCES Audiobook (AUD_ID) 
+                     NOT NULL,
+    Narr_ID  INTEGER REFERENCES Narrator (ID) 
+                     NOT NULL,
+    PRIMARY KEY (
+        Audio_ID,
+        Narr_ID
+    ),
+    UNIQUE (
+        Audio_ID,
+        Narr_ID
+    )
+);
+
+
+-- Table: Narrator
+CREATE TABLE Narrator (
+    ID    INTEGER      PRIMARY KEY
+                       NOT NULL,
+    Fname VARCHAR (20) NOT NULL,
+    Lname VARCHAR (30) NOT NULL,
+    UNIQUE (
+        ID
+    )
+);
+
+
+-- Table: Patron
+CREATE TABLE Patron (
+    CardNo  INTEGER      UNIQUE
+                         NOT NULL
+                         PRIMARY KEY,
+    Fname   VARCHAR (20) NOT NULL,
+    Lname   VARCHAR (30) NOT NULL,
+    Address STRING,
+    Email   STRING       NOT NULL
+);
+
+
+-- Table: Physical_Copy
+CREATE TABLE Physical_Copy (
+    Item_ID  INTEGER REFERENCES Inventory (Inv_ID) 
+                     NOT NULL,
+    Location VARCHAR NOT NULL
+                     UNIQUE,
+    Reserved INTEGER REFERENCES Patron (CardNo),
+    Out_Date DATE,
+    Due_Date DATE,
+    PRIMARY KEY (
+        Location
+    )
+);
+
+
+-- Table: Track
+CREATE TABLE Track (
+    Title  VARCHAR (25) NOT NULL,
+    Rec_ID INTEGER      REFERENCES Album (ALB_ID) 
+                        NOT NULL,
+    PRIMARY KEY (
+        Title,
+        Rec_ID
+    )
+);
+
+
+-- Table: Written_By
+CREATE TABLE Written_By (
+    Audio_ID INTEGER REFERENCES Audiobook (AUD_ID) 
+                     NOT NULL,
+    Auth_ID  INTEGER REFERENCES Author (ID) 
+                     NOT NULL,
+    PRIMARY KEY (
+        Audio_ID,
+        Auth_ID
+    ),
+    UNIQUE (
+        Audio_ID,
+        Auth_ID
+    )
+);
+
+
+-- Index: NotReservedElectronic
+CREATE INDEX NotReservedElectronic ON Electronic_Copy (
+    Item_ID,
+    License,
+    Reserved
+)
+WHERE Reserved IS NULL;
+
+
+-- Index: NotReservedPhysical
+CREATE INDEX NotReservedPhysical ON Physical_Copy (
+    Item_ID,
+    Location,
+    Reserved
+)
+WHERE Reserved IS NULL;
+
+--Index: longestToShortest
+CREATE INDEX longestToShortest ON Inventory (
+    Length ASC,
+    Inv_ID,
+    Title
+);
+
+
+COMMIT TRANSACTION;
+PRAGMA foreign_keys = on;

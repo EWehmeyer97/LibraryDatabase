@@ -1,0 +1,20 @@
+INSERT INTO Inventory
+VALUES (62, 'Leroy Strikes Back', 2007, 138);
+
+INSERT INTO Electronic_Copy
+VALUES (62, 308, NULL, NULL, NULL);
+
+INSERT INTO Physical_Copy
+VALUES (62, 'RTXOO', NULL, NULL, NULL);
+
+INSERT INTO Audiobook
+VALUES (62, 12);
+
+INSERT INTO Genres
+VALUES (62, 'Romance');
+
+INSERT INTO Written_By
+VALUES (62, 50);
+
+INSERT INTO Narrated_By
+VALUES (62, 9);

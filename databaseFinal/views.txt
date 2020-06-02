@@ -1,0 +1,50 @@
+CREATE VIEW MoviesCheckedOut (
+    PatronFirstName,
+    PatronLastName,
+    NumberOfFilms
+)
+AS
+    SELECT Patron.Fname,
+           Patron.Lname,
+           COUNT(Physical_Copy.Item_ID) 
+      FROM Physical_Copy,
+           Movie,
+           Patron
+     WHERE Physical_Copy.ITEM_ID = Movie.MOV_ID AND 
+           Physical_Copy.Reserved IS NOT NULL AND 
+           Physical_Copy.Reserved = Patron.CardNo
+     GROUP BY Physical_Copy.Reserved
+    UNION ALL
+    SELECT Patron.Fname,
+           Patron.Lname,
+           COUNT(Electronic_Copy.ITEM_ID) 
+      FROM Electronic_Copy,
+           Movie,
+           Patron
+     WHERE Electronic_Copy.Item_ID = Movie.MOV_ID AND 
+           Electronic_Copy.Reserved IS NOT NULL AND 
+           Electronic_Copy.Reserved = Patron.CardNo
+     GROUP BY Electronic_Copy.Reserved;
+
+CREATE VIEW TimesWorkedTogether (
+    AuthorFirstName,
+    AuthorLastName,
+    NarratorFirstName,
+    NarratorLastName,
+    TotalProjects
+)
+AS
+    SELECT Author.Fname,
+           Author.Lname,
+           Narrator.Fname,
+           Narrator.Lname,
+           COUNT(Written_By.Audio_ID) 
+      FROM Author,
+           Narrator,
+           Written_By,
+           Narrated_By
+     WHERE Author.ID = Written_By.Auth_ID AND 
+           Narrator.ID = Narrated_By.Narr_ID AND 
+           Written_By.Audio_ID = Narrated_By.Audio_ID
+     GROUP BY Author.ID,
+              Narrator.ID;

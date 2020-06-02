@@ -1,0 +1,102 @@
+SELECT Title
+FROM Artist, Album_Creation, Album, Track, Inventory
+WHERE ID = Artist_ID
+AND Album_ID = ALB_ID
+AND Rec_ID = ALB_ID
+AND ALB_ID = Inv_ID
+AND Fname = FNAME
+AND Lname = LNAME
+AND Year < YEAR;
+
+-- set FNAME, LNAME, and YEAR to the first and last name of the desired artist and the desired cutoff year
+
+
+SELECT Title, Out_Date
+FROM Patron JOIN (
+    SELECT *
+    FROM Physical_Copy, Inventory, Movie
+    WHERE Item_ID = Inv_ID
+    AND Inv_ID = MOV_ID
+    UNION ALL
+    SELECT *
+    FROM Electronic_Copy, Inventory, Movie
+    WHERE Item_ID = Inv_ID
+    AND Inv_ID = MOV_ID
+) ON CardNo = Reserved
+WHERE Fname = FNAME
+AND Lname = LNAME;
+
+-- set FNAME and LNAME to the first and last name of the desired patron
+
+
+SELECT Title, ALB_ID
+FROM Album LEFT OUTER JOIN (
+    SELECT *
+    FROM Physical_Copy, Inventory
+    WHERE Item_ID = Inv_ID
+    UNION ALL
+    SELECT *
+    FROM Electronic_Copy, Inventory
+    WHERE Item_ID = Inv_ID
+) ON ALB_ID = Inv_ID
+GROUP BY ALB_ID
+HAVING COUNT(Item_ID) < 2;
+
+
+FROM Patron JOIN (
+    SELECT Title, Reserved
+    FROM Actor, Actor_Starring, Movie, Inventory, Physical_Copy
+    WHERE ID = Actor_ID
+    AND Movie_ID = MOV_ID
+    AND MOV_ID = Inv_ID
+    AND Inv_ID = Item_ID
+    AND Fname = FNAME
+    AND Lname = LNAME
+    UNION ALL
+    SELECT Title, Reserved
+    FROM Actor, Actor_Starring, Movie, Inventory, Electronic_Copy
+    WHERE ID = Actor_ID
+    AND Movie_ID = MOV_ID
+    AND MOV_ID = Inv_ID
+    AND Inv_ID = Item_ID
+    AND Fname = FNAME
+    AND Lname = LNAME
+) ON CardNo = Reserved;
+
+-- set FNAME and LNAME to the first and last name of the desired actor
+
+
+SELECT COUNT(ALB_ID)
+FROM Patron JOIN (
+    SELECT *
+    FROM Physical_Copy, Inventory, Album
+    WHERE Item_ID = Inv_ID
+    AND Inv_ID = ALB_ID
+    UNION ALL
+    SELECT *
+    FROM Electronic_Copy, Inventory, Album
+    WHERE Item_ID = Inv_ID
+    AND Inv_ID = ALB_ID
+) ON CardNo = Reserved
+WHERE Fname = FNAME
+AND Lname = LNAME
+GROUP BY CardNo;
+
+-- set FNAME and LNAME to the first and last name of the desired patron
+
+
+SELECT Fname, Lname, COUNT(ALB_ID)
+FROM Patron JOIN (
+    SELECT *
+    FROM Physical_Copy, Inventory, Album
+    WHERE Item_ID = Inv_ID
+    AND Inv_ID = ALB_ID
+    UNION ALL
+    SELECT *
+    FROM Electronic_Copy, Inventory, Album
+    WHERE Item_ID = Inv_ID
+    AND Inv_ID = ALB_ID
+) ON CardNo = Reserved
+GROUP BY CardNo
+ORDER BY 3 DESC
+LIMIT 1;

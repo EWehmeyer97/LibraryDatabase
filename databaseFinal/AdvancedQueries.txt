@@ -1,0 +1,262 @@
+--Provide a list of patron names, along with the total combined running time of all the movies they have checked out. 
+SELECT P.Fname, P.Lname, SUM(I.Length)
+FROM Patron as P, Physical_Copy as PC, Inventory as I, Movie as M
+WHERE P.CardNo = PC.Reserved 
+AND PC.Item_ID = M.MOV_ID
+AND M.MOV_ID = I.Inv_ID
+GROUP BY P.CardNo
+UNION ALL
+SELECT P.Fname, P.Lname, SUM(I.Length)
+FROM Patron as P, Electronic_Copy as EC, Inventory as I, Movie as M
+WHERE P.CardNo = EC.Reserved 
+AND EC.Item_ID = M.MOV_ID
+AND M.MOV_ID = I.Inv_ID
+GROUP BY P.CardNo;
+
+--Provide a list of patron names and email addresses for patrons who have checked out more albums than the average patron. 
+SELECT Fname, Lname, Email
+FROM (
+    SELECT *
+    FROM Patron, Physical_Copy, Inventory, Album
+    WHERE CardNo = Reserved
+    AND Item_ID = Inv_ID
+    AND Inv_ID = ALB_ID
+    UNION ALL
+    SELECT *
+    FROM Patron, Electronic_Copy, Inventory, Album
+    WHERE CardNo = Reserved
+    AND Item_ID = Inv_ID
+    AND Inv_ID = ALB_ID
+)
+GROUP BY CardNo
+HAVING COUNT(ALB_ID) > (
+    SELECT COUNT(ALB_ID) / COUNT(DISTINCT CardNo)
+    FROM Patron as P LEFT OUTER JOIN (
+        SELECT *
+        FROM Physical_Copy, Inventory, Album
+        WHERE Item_ID = Inv_ID
+        AND Inv_ID = ALB_ID
+        UNION ALL
+        SELECT *
+        FROM Electronic_Copy, Inventory, Album
+        WHERE Item_ID = Inv_ID
+        AND Inv_ID = ALB_ID
+    ) ON CardNo = Reserved
+);
+
+--Provide a list of the movies in the database and associated total copies lent to patrons, sorted from the movie that has been lent the most to the movies that has been lent the least. 
+SELECT Title, COUNT(CardNo)
+FROM Movie JOIN Inventory ON MOV_ID = Inv_ID
+LEFT OUTER JOIN (
+    SELECT *
+    FROM Physical_Copy, Patron
+    WHERE Reserved = CardNo
+    UNION ALL
+    SELECT *
+    FROM Electronic_Copy, Patron
+    WHERE Reserved = CardNo
+) ON Inv_ID = Item_ID
+GROUP BY MOV_ID
+ORDER BY 2 DESC;
+
+--Provide a list of the albums in the database and associated totals for copies checked out to customers, sorted from the ones that have been checked out the highest amount to the ones checked out the lowest.
+SELECT Title, COUNT(CardNo)
+FROM Album JOIN Inventory ON ALB_ID = Inv_ID
+LEFT OUTER JOIN (
+    SELECT *
+    FROM Physical_Copy, Patron
+    WHERE Reserved = CardNo
+    UNION ALL
+    SELECT *
+    FROM Electronic_Copy, Patron
+    WHERE Reserved = CardNo
+) ON Inv_ID = Item_ID
+GROUP BY ALB_ID
+ORDER BY 2 DESC;
+
+--Find the most popular actor in the database (i.e. the one who has had the most lent movies)
+SELECT Fname, Lname
+FROM Actor JOIN (
+    SELECT *
+    FROM Actor_Starring, Movie, Inventory, Physical_Copy, Patron
+    WHERE Movie_ID = MOV_ID
+    AND MOV_ID = Inv_ID
+    AND Inv_ID = Item_ID
+    AND Reserved = CardNo
+    UNION ALL
+    SELECT *
+    FROM Actor_Starring, Movie, Inventory, Electronic_Copy, Patron
+    WHERE Movie_ID = MOV_ID
+    AND MOV_ID = Inv_ID
+    AND Inv_ID = Item_ID
+    AND Reserved = CardNo
+) ON ID = Actor_ID
+GROUP BY ID
+HAVING COUNT(CardNo) = (
+    SELECT MAX(lent)
+    FROM (
+        SELECT COUNT(CardNo) as lent
+        FROM (
+            SELECT *
+            FROM Actor_Starring, Movie, Inventory, Physical_Copy, Patron
+            WHERE Movie_ID = MOV_ID
+            AND MOV_ID = Inv_ID
+            AND Inv_ID = Item_ID
+            AND Reserved = CardNo
+            UNION ALL
+            SELECT *
+            FROM Actor_Starring, Movie, Inventory, Electronic_Copy, Patron
+            WHERE Movie_ID = MOV_ID
+            AND MOV_ID = Inv_ID
+            AND Inv_ID = Item_ID
+            AND Reserved = CardNo
+        )
+        GROUP BY Actor_ID
+    )
+);
+
+--Find the most listened to artist in the database (use the running time of the album and number of times the album has been lent out to calculate)
+SELECT Fname, Lname
+FROM Artist JOIN (
+    SELECT *
+    FROM Album_Creation, Album, Inventory, Physical_Copy, Patron
+    WHERE Album_ID = ALB_ID
+    AND ALB_ID = Inv_ID
+    AND Inv_ID = Item_ID
+    AND Reserved = CardNo
+    UNION ALL
+    SELECT *
+    FROM Album_Creation, Album, Inventory, Electronic_Copy, Patron
+    WHERE Album_ID = ALB_ID
+    AND ALB_ID = Inv_ID
+    AND Inv_ID = Item_ID
+    AND Reserved = CardNo
+) ON ID = Artist_ID
+GROUP BY ID
+HAVING SUM(Length) = (
+    SELECT MAX(runtime)
+    FROM (
+        SELECT SUM(Length) as runtime
+        FROM (
+            SELECT *
+            FROM Album_Creation, Album, Inventory, Physical_Copy, Patron
+            WHERE Album_ID = ALB_ID
+            AND ALB_ID = Inv_ID
+            AND Inv_ID = Item_ID
+            AND Reserved = CardNo
+            UNION ALL
+            SELECT *
+            FROM Album_Creation, Album, Inventory, Electronic_Copy, Patron
+            WHERE Album_ID = ALB_ID
+            AND ALB_ID = Inv_ID
+            AND Inv_ID = Item_ID
+            AND Reserved = CardNo
+        )
+        GROUP BY Artist_ID
+    )
+);
+
+--Provide a list of customer information for patrons who have checked out anything by the most watched actors in the database. 
+SELECT DISTINCT Fname, Lname, CardNo, Address, Email
+FROM Patron JOIN (
+    SELECT *
+    FROM Physical_Copy, Inventory, Movie, Actor_Starring
+    WHERE Item_ID = Inv_ID
+    AND Inv_ID = MOV_ID
+    AND MOV_ID = Movie_ID
+    UNION ALL
+    SELECT *
+    FROM Electronic_Copy, Inventory, Movie, Actor_Starring
+    WHERE Item_ID = Inv_ID
+    AND Inv_ID = MOV_ID
+    AND MOV_ID = Movie_ID
+) ON CardNo = Reserved
+WHERE Actor_ID IN (
+    SELECT ID
+    FROM Actor JOIN (
+        SELECT *
+        FROM Actor_Starring, Movie, Inventory, Physical_Copy, Patron
+        WHERE Movie_ID = MOV_ID
+        AND MOV_ID = Inv_ID
+        AND Inv_ID = Item_ID
+        AND Reserved = CardNo
+        UNION ALL
+        SELECT *
+        FROM Actor_Starring, Movie, Inventory, Electronic_Copy, Patron
+        WHERE Movie_ID = MOV_ID
+        AND MOV_ID = Inv_ID
+        AND Inv_ID = Item_ID
+        AND Reserved = CardNo
+    ) ON ID = Actor_ID
+    HAVING COUNT(CardNo) = (
+        SELECT MAX(lent)
+        FROM (
+            SELECT COUNT(CardNo) as lent
+            FROM (
+                SELECT *
+                FROM Actor_Starring, Movie, Inventory, Physical_Copy, Patron
+                WHERE Movie_ID = MOV_ID
+                AND MOV_ID = Inv_ID
+                AND Inv_ID = Item_ID
+                AND Reserved = CardNo
+                UNION ALL
+                SELECT *
+                FROM Actor_Starring, Movie, Inventory, Electronic_Copy, Patron
+                WHERE Movie_ID = MOV_ID
+                AND MOV_ID = Inv_ID
+                AND Inv_ID = Item_ID
+                AND Reserved = CardNo
+            )
+            GROUP BY Actor_ID
+        )
+    )
+)
+
+--Provide a list of artists who authored the albums checked out by customers who have checked out more albums than the average customer. 
+SELECT DISTINCT Fname, Lname
+FROM Artist JOIN (
+    SELECT *
+    FROM Album_Creation, Album, Inventory, Physical_Copy, Patron
+    WHERE Album_ID = ALB_ID
+    AND ALB_ID = Inv_ID
+    AND Inv_ID = Item_ID
+    AND Reserved = CardNo
+    UNION ALL
+    SELECT *
+    FROM Album_Creation, Album, Inventory, Electronic_Copy, Patron
+    WHERE Album_ID = ALB_ID
+    AND ALB_ID = Inv_ID
+    AND Inv_ID = Item_ID
+    AND Reserved = CardNo
+) ON ID = Artist_ID
+WHERE CardNo IN (
+    SELECT CardNo
+    FROM (
+        SELECT *
+        FROM Patron, Physical_Copy, Inventory, Album
+        WHERE CardNo = Reserved
+        AND Item_ID = Inv_ID
+        AND Inv_ID = ALB_ID
+        UNION ALL
+        SELECT *
+        FROM Patron, Electronic_Copy, Inventory, Album
+        WHERE CardNo = Reserved
+        AND Item_ID = Inv_ID
+        AND Inv_ID = ALB_ID
+        )
+    GROUP BY CardNo
+    HAVING COUNT(ALB_ID) > (
+        SELECT COUNT(ALB_ID) / COUNT(DISTINCT CardNo)
+        FROM Patron as P LEFT OUTER JOIN (
+            SELECT *
+            FROM Physical_Copy, Inventory, Album
+            WHERE Item_ID = Inv_ID
+            AND Inv_ID = ALB_ID
+            UNION ALL
+            SELECT *
+            FROM Electronic_Copy, Inventory, Album
+            WHERE Item_ID = Inv_ID
+            AND Inv_ID = ALB_ID
+        ) ON CardNo = Reserved
+    )
+);

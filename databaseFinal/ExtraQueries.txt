@@ -1,0 +1,30 @@
+--Total Fees owed by Patrons
+SELECT Patron.Fname, Patron.Lname, SUM(Fee.Amount)
+FROM Patron, Fee
+WHERE Patron.CardNo = Fee.HolderNo
+GROUP BY Patron.CardNo
+
+--Total Number of Audiobooks checked out
+SELECT
+(SELECT COUNT(Physical_Copy.Reserved)
+FROM Physical_Copy, Audiobook
+WHERE Physical_Copy.Reserved IS NOT Null
+AND Physical_Copy.Item_ID = Audiobook.AUD_ID)
++
+(SELECT COUNT(Electronic_Copy.Reserved)
+FROM Electronic_Copy, Audiobook
+WHERE Electronic_Copy.Reserved IS NOT Null
+AND Electronic_Copy.Item_ID = Audiobook.AUD_ID)
+
+--Titles of all Audiobooks written by PETER JACKSON and narrated by JOHN SMITH
+SELECT Inventory.Title
+FROM Inventory, Audiobook, Written_By, Narrated_By, Narrator, Author
+WHERE Narrator.Fname = 'John'
+AND Narrator.Lname = 'Smith'
+AND Author.Fname = 'Peter'
+AND Author.Lname = 'Jackson'
+AND Written_By.Auth_ID = Author.ID
+AND Narrated_By.Narr_ID = Narrator.ID
+AND Audiobook.AUD_ID = Written_By.Audio_ID
+AND Audiobook.AUD_ID = Narrated_By.Audio_ID
+AND Inventory.Inv_ID = Audiobook.AUD_ID

@@ -1,0 +1,20 @@
+DELETE FROM Narrated_By
+WHERE Audio_ID = 62 AND Narr_ID = 9;
+
+DELETE FROM Written_By
+WHERE Audio_ID = 62 AND Auth_ID = 50;
+
+DELETE FROM Genres
+WHERE Piece_ID = 62 AND Genre = 'Romance';
+
+DELETE FROM Audiobook
+WHERE Aud_ID = 62;
+
+DELETE FROM Physical_Copy
+WHERE Location = 'RTXOO';
+
+DELETE FROM Electronic_Copy
+WHERE License = 308;
+
+DELETE FROM Inventory
+WHERE Inv_ID = 62;
